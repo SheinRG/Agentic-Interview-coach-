@@ -154,29 +154,17 @@ export const logout = (_req, res) => {
 
 /**
  * GET /api/auth/me
- * Return the current user from the JWT (Bearer header or cookie fallback).
+ * Return the current user. Auth is handled by the `protect` middleware,
+ * which populates req.user from the Bearer token (or cookie fallback).
  */
 export const me = async (req, res) => {
   try {
-    let token = null;
-
-    // Primary: Bearer header
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
-    // Fallback: cookie
-    if (!token) token = req.cookies?.token;
-
-    if (!token) return res.status(401).json({ message: 'Not authenticated' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
-    const user = await User.findById(decoded.userId).select('-passwordHash');
+    const user = await User.findById(req.user.userId).select('-passwordHash');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json({ user: { id: user._id, name: user.name, email: user.email, targetRoles: user.targetRoles } });
   } catch (err) {
-    res.status(401).json({ message: 'Not authenticated' });
+    res.status(500).json({ message: 'Server error fetching profile' });
   }
 };
 
@@ -186,16 +174,7 @@ export const me = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    let token = null;
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
-    if (!token) token = req.cookies?.token;
-    if (!token) return res.status(401).json({ message: 'Not authenticated' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const { email, password, targetRoles } = req.body;

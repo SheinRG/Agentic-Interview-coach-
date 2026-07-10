@@ -1,7 +1,5 @@
 import express from 'express';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import { PDFParse } from 'pdf-parse';
 import protect from '../middleware/auth.js';
 import User from '../models/User.js';

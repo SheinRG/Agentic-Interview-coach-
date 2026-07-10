@@ -11,8 +11,6 @@ export default function useSpeech() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  const lastActivityRef = useRef(Date.now());
-
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -33,7 +31,6 @@ export default function useSpeech() {
         currentTranscript += event.results[i][0].transcript;
       }
       setTranscript(currentTranscript);
-      lastActivityRef.current = Date.now(); // Mark activity whenever text updates
     };
 
     recognition.onerror = (event) => {
@@ -60,8 +57,7 @@ export default function useSpeech() {
   const start = useCallback(async () => {
     setTranscript('');
     setIsListening(true);
-    lastActivityRef.current = Date.now();
-    
+
     // 1. Start Browser Recognition (for live UI feedback only)
     if (recognitionRef.current) {
       try { 
@@ -147,7 +143,5 @@ export default function useSpeech() {
     setTranscript('');
   }, []);
 
-  return { transcript, isListening, start, stop, reset, lastActivity: lastActivityRef.current };
+  return { transcript, isListening, start, stop, reset };
 }
-
-// Ready for: live mic animation and waving visualiser
