@@ -33,6 +33,10 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
+    if (typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(409).json({ message: 'Email already registered' });
 
@@ -43,7 +47,7 @@ export const register = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || 'dev-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -79,7 +83,7 @@ export const login = async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || 'dev-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -114,7 +118,13 @@ export const googleLogin = async (req, res) => {
     }
     
     const payload = await userInfoResponse.json();
-    const { email, name, sub: googleId } = payload;
+    const { email, name, sub: googleId, email_verified } = payload;
+
+    // Only trust Google-verified emails — otherwise an attacker could link
+    // to an existing account by claiming an unverified address.
+    if (email_verified === false || email_verified === 'false') {
+      return res.status(401).json({ message: 'Google account email is not verified' });
+    }
 
     let user = await User.findOne({ email });
     
@@ -127,7 +137,7 @@ export const googleLogin = async (req, res) => {
 
     const jwtToken = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || 'dev-secret',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -139,7 +149,7 @@ export const googleLogin = async (req, res) => {
     });
   } catch (err) {
     console.error('Google login error:', err);
-    res.status(500).json({ message: 'Server error during Google login', error: err.message });
+    res.status(500).json({ message: 'Server error during Google login' });
   }
 };
 

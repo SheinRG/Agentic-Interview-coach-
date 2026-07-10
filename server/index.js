@@ -29,6 +29,11 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET is not defined — refusing to start with an insecure default');
+  process.exit(1);
+}
+
 // ── Database ────────────────────────────────────────────
 mongoose
   .connect(MONGODB_URI)
@@ -37,10 +42,16 @@ mongoose
 
 // ── Security ────────────────────────────────────────────
 app.use(helmet());
+
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(cors({
   origin: function (origin, callback) {
-    const allowed = [process.env.CLIENT_URL];
-    if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || allowed.includes(origin)) {
+    const allowed = [process.env.CLIENT_URL].filter(Boolean);
+    // Allow localhost origins only outside production.
+    const isLocalhost = !isProduction && (
+      origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1')
+    );
+    if (!origin || isLocalhost || allowed.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -50,8 +61,10 @@ app.use(cors({
 }));
 
 // ── Parsers ─────────────────────────────────────────────
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// 15MB covers base64 webcam snapshots in feedback submissions while
+// keeping the large-payload DoS surface small.
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(cookieParser());
 
 // ── Health Check ────────────────────────────────────────

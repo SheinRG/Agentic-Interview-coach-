@@ -91,7 +91,7 @@ router.post('/upload', protect, upload.single('resume'), async (req, res) => {
     });
   } catch (err) {
     console.error('Resume upload error:', err);
-    res.status(500).json({ message: 'Failed to process resume', error: err.message });
+    res.status(500).json({ message: 'Failed to process resume' });
   }
 });
 

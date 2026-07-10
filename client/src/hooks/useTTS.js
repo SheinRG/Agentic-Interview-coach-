@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -77,7 +78,7 @@ export default function useTTS() {
       try {
         setIsSpeaking(true);
 
-        const response = await fetch(`${API_BASE_URL}/tts`, {
+        const response = await authFetch(`${API_BASE_URL}/tts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
