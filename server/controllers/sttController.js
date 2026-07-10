@@ -40,6 +40,6 @@ export const handleSTT = async (req, res) => {
       try { fs.unlinkSync(tempPath); } catch (e) {}
     }
     
-    res.status(500).json({ message: 'Transcription failed: ' + err.message });
+    res.status(500).json({ message: 'Transcription failed' });
   }
 };

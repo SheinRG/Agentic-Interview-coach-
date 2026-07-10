@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { authFetch } from '../utils/authFetch';
 
 /**
  * useSpeech — wraps the browser-native Web Speech API for live feedback
@@ -111,7 +112,7 @@ export default function useSpeech() {
             formData.append('audio', audioBlob, 'answer.webm');
             
             const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-            const response = await fetch(`${API}/stt`, {
+            const response = await authFetch(`${API}/stt`, {
               method: 'POST',
               body: formData,
             });

@@ -1,14 +1,17 @@
 import express from 'express';
+import protect from '../middleware/auth.js';
+import { mediaLimiter } from '../middleware/rateLimiter.js';
 import { textToSpeech } from '../services/ttsService.js';
 
 const router = express.Router();
 
 /**
  * POST /api/tts
- * Converts text to speech using ElevenLabs and streams audio back.
+ * Converts text to speech and streams audio back. Authenticated + rate
+ * limited to protect the paid TTS quota.
  * Body: { text: string }
  */
-router.post('/', async (req, res) => {
+router.post('/', protect, mediaLimiter, async (req, res) => {
   try {
     const { text } = req.body;
 
@@ -30,7 +33,7 @@ router.post('/', async (req, res) => {
     res.send(audioBuffer);
   } catch (err) {
     console.warn('⚠️ TTS error:', err.message);
-    res.status(500).json({ message: 'Text-to-speech generation failed', error: err.message });
+    res.status(500).json({ message: 'Text-to-speech generation failed' });
   }
 });
 
