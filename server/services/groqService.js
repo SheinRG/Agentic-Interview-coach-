@@ -6,6 +6,20 @@ dotenv.config({ path: '../.env' });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 
 /**
+ * Strip Markdown code fences (```json ... ``` or ``` ... ```) that some
+ * models wrap around JSON responses, so the payload can be JSON.parse'd.
+ */
+function stripJsonFences(content = '') {
+  if (content.startsWith('```json')) {
+    return content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  }
+  if (content.startsWith('```')) {
+    return content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+  return content;
+}
+
+/**
  * analyzeResume(resumeText)
  * Parses raw resume text and returns structured data.
  */
@@ -33,12 +47,7 @@ ${resumeText.slice(0, 4000)}`;
     response_format: { type: 'json_object' },
   });
 
-  let content = completion.choices[0]?.message?.content || '';
-  if (content.startsWith('```json')) {
-    content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (content.startsWith('```')) {
-    content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
-  }
+  const content = stripJsonFences(completion.choices[0]?.message?.content || '');
   return JSON.parse(content);
 }
 
@@ -135,13 +144,7 @@ Return ONLY a JSON object with a "questions" array of 6 strings. The very first 
       response_format: { type: 'json_object' },
     });
 
-    let content = completion.choices[0]?.message?.content || '';
-
-    if (content.startsWith('```json')) {
-      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-    } else if (content.startsWith('```')) {
-      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
-    }
+    const content = stripJsonFences(completion.choices[0]?.message?.content || '');
     const parsed = JSON.parse(content);
     return { ...parsed, isAiGenerated: true, isResumeTailored: !!resumeContext };
   } catch (error) {
@@ -336,14 +339,7 @@ ${transcript}`;
       response_format: { type: 'json_object' },
     });
 
-    let content = completion.choices[0]?.message?.content || '';
-
-    if (content.startsWith('```json')) {
-      content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-    } else if (content.startsWith('```')) {
-      content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
-    }
-
+    const content = stripJsonFences(completion.choices[0]?.message?.content || '');
     const raw = JSON.parse(content);
 
     // Normalize: handle both flat and nested score formats from the LLM

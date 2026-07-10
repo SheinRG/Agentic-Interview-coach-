@@ -1,7 +1,7 @@
 import Session from '../models/Session.js';
 import Feedback from '../models/Feedback.js';
 import User from '../models/User.js';
-import { generateQuestions, generateHint, generateFollowUp } from '../services/groqService.js';
+import { generateQuestions, generateHint, generateFollowUp, generateReaction } from '../services/groqService.js';
 
 /**
  * GET /api/sessions
@@ -150,7 +150,6 @@ export const getReaction = async (req, res) => {
     const session = await Session.findOne({ _id: req.params.id, userId: req.user.userId });
     const personality = session ? session.personality : 'standard';
 
-    const { generateReaction } = await import('../services/groqService.js');
     const reaction = await generateReaction(question, answer, personality);
     
     res.status(200).json({ reaction });

@@ -31,7 +31,7 @@ export default function InterviewPage() {
     conversationHistory,
   } = useInterview(sessionId);
 
-  const { transcript, isListening, start, stop, lastActivity } = useSpeech();
+  const { transcript, isListening, start, stop } = useSpeech();
   const { speak, stopSpeaking, isSpeaking } = useTTS();
   const [submitting, setSubmitting] = useState(false);
   
@@ -40,9 +40,6 @@ export default function InterviewPage() {
 
   const [viewIndex, setViewIndex] = useState(0);
   const [snapshots, setSnapshots] = useState([]);
-  
-  const isSpeakingRef = useRef(isSpeaking);
-  const silenceTimerRef = useRef(null);
 
   // Redirect if no session ID exists
   useEffect(() => {
@@ -89,7 +86,6 @@ export default function InterviewPage() {
   const handleEndTest = async () => {
     await stop();
     stopSpeaking();
-    clearTimeout(silenceTimerRef.current);
     navigate('/dashboard');
   };
 
@@ -123,9 +119,8 @@ export default function InterviewPage() {
   const handleNext = async () => {
     // Capture whether the mic was actually active BEFORE stopping it
     const wasListening = isListening;
-    const finalTranscript = await stop(); 
+    const finalTranscript = await stop();
     stopSpeaking();
-    clearTimeout(silenceTimerRef.current);
 
     const isLast = currentIndex + 1 >= totalQuestions;
     

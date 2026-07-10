@@ -11,11 +11,6 @@ const roleLabels = { swe: 'SWE', pm: 'PM', design: 'Design', marketing: 'Marketi
 const levelLabels = { intern: 'Intern', junior: 'Junior', mid: 'Mid', senior: 'Senior' };
 const typeLabels = { behavioral: 'Behavioral', technical: 'Technical', 'case-study': 'Case Study' };
 
-const itemVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-};
-
 function SparkLine({ data }) {
   if (!data || data.length < 2) return <div className="text-zinc-600 text-xs text-center py-4">Complete more sessions to see your trend</div>;
   const width = 300;
@@ -72,7 +67,6 @@ export default function DashboardPage() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [personalityOpen, setPersonalityOpen] = useState(false);
   const [selectedPersonality, setSelectedPersonality] = useState('standard');
-  const [userProfile, setUserProfile] = useState({});
   const [formData, setFormData] = useState({ email: '', password: '', targetRoles: [] });
   const [isThemeLight, setIsThemeLight] = useState(false);
   const dropdownRef = useRef(null);
@@ -173,7 +167,6 @@ export default function DashboardPage() {
         const data = await userRes.json();
         if (userRes.ok) {
           setUserName(data.user.name || 'Professional');
-          setUserProfile(data.user);
           setFormData({ ...formData, email: data.user.email, targetRoles: data.user.targetRoles || [] });
         }
 
