@@ -1,29 +1,10 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'your_google_client_id_here');
-
-const isProd = process.env.NODE_ENV === 'production';
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true, // Keep true for most envs but note it requires HTTPS
-  sameSite: 'none', // Required for cross-site
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-};
-
-// Adjust for local development if not using HTTPS
-if (!isProd) {
-  COOKIE_OPTIONS.secure = false;
-  COOKIE_OPTIONS.sameSite = 'lax';
-}
-
 
 /**
  * POST /api/auth/register
- * Hash password with bcrypt, create user, return JWT in httpOnly cookie.
+ * Hash password with bcrypt, create user, return a JWT (Bearer token).
  */
 export const register = async (req, res) => {
   try {
@@ -51,7 +32,6 @@ export const register = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('token', token, COOKIE_OPTIONS);
     res.status(201).json({
       message: 'User registered successfully',
       token,
@@ -65,7 +45,7 @@ export const register = async (req, res) => {
 
 /**
  * POST /api/auth/login
- * Verify password, return JWT in httpOnly cookie.
+ * Verify password, return a JWT (Bearer token).
  */
 export const login = async (req, res) => {
   try {
@@ -87,7 +67,6 @@ export const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('token', token, COOKIE_OPTIONS);
     res.status(200).json({
       message: 'Logged in successfully',
       token,
@@ -101,7 +80,7 @@ export const login = async (req, res) => {
 
 /**
  * POST /api/auth/google
- * Verify Google ID token, find/create user, return JWT in cookie.
+ * Verify Google access token, find/create user, return a JWT (Bearer token).
  */
 export const googleLogin = async (req, res) => {
   try {
@@ -141,7 +120,6 @@ export const googleLogin = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('token', jwtToken, COOKIE_OPTIONS);
     res.status(200).json({
       message: 'Logged in with Google successfully',
       token: jwtToken,
@@ -155,17 +133,16 @@ export const googleLogin = async (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Clear the httpOnly cookie.
+ * Token is Bearer-based and cleared client-side; this is a no-op acknowledgement.
  */
 export const logout = (_req, res) => {
-  res.clearCookie('token', COOKIE_OPTIONS);
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
 /**
  * GET /api/auth/me
  * Return the current user. Auth is handled by the `protect` middleware,
- * which populates req.user from the Bearer token (or cookie fallback).
+ * which populates req.user from the Bearer token.
  */
 export const me = async (req, res) => {
   try {
