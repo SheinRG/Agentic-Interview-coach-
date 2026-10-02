@@ -14,7 +14,8 @@ export const createFeedback = async (req, res) => {
       return res.status(400).json({ message: 'Session ID and answers are required' });
     }
 
-    const session = await Session.findById(sessionId);
+    // Scope by userId so a caller can only grade — and overwrite — their own session.
+    const session = await Session.findOne({ _id: sessionId, userId: req.user.userId });
     if (!session) return res.status(404).json({ message: 'Session not found' });
 
     // Use the frontend's questions array (correct order with follow-ups
@@ -23,6 +24,12 @@ export const createFeedback = async (req, res) => {
     const orderedQuestions = (submittedQuestions && submittedQuestions.length > 0)
       ? submittedQuestions
       : session.questions;
+
+    // The two arrays are positionally correlated, so a length mismatch would
+    // pair the wrong answer with the wrong question in the transcript.
+    if (!Array.isArray(answers) || answers.length !== orderedQuestions.length) {
+      return res.status(400).json({ message: 'Answers must align with the session questions' });
+    }
 
     // Save both the correctly-ordered questions and answers to the session
     session.questions = orderedQuestions;
